@@ -1,0 +1,22 @@
+get_filename_component(@LIB_NAME@_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+include(CMakeFindDependencyMacro)
+
+list(APPEND CMAKE_MODULE_PATH ${@LIB_NAME@_CMAKE_DIR})
+
+# cmake < 3.8 does not support modules in find_dependency, you may want to use find_package
+#find_dependency(Eigen3 REQUIRED)
+#find_package(Eigen3 REQUIRED)
+#find_package(OpenCV REQUIRED)
+
+find_package(glog REQUIRED)
+find_package(Boost COMPONENTS system filesystem REQUIRED )
+
+list(REMOVE_AT CMAKE_MODULE_PATH -1)
+
+# include the Targets.cmake
+if(NOT TARGET @LIB_NAMESPACE@::@LIB_NAME@)
+    include("${@LIB_NAME@_CMAKE_DIR}/@LIB_NAME@Targets.cmake")
+endif()
+
+set(@LIB_NAME@_LIBRARIES @LIB_NAMESPACE@::@LIB_NAME@)
+set(@LIB_NAME@_INCLUDE_DIRS "@LIB_TARGET_INCLUDE_DIRS@")

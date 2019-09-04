@@ -1,0 +1,15 @@
+{
+    "full_name":                 "Your name",
+    "email":                     "Your address email (eq. you@example.com)",
+    "github_username":           "Your github username",
+    "project_name":              "CPP Library",
+    "cpp_namespace_root":        "high level namespace i.e. your company",
+    "cpp_namespace_project":     "utilities",
+    "project_slug":              "{{ cookiecutter.cpp_namespace_root.lower().replace(' ', '-') }}_{{ cookiecutter.cpp_namespace_project.lower().replace(' ', '-') }}",
+    "project_short_description": "A short description of the project",
+    "release_date":              "{% now 'local' %}",
+    "version":                   "0.1.0",
+    "_extensions":               [
+        "jinja2_time.TimeExtension"
+    ]
+}
