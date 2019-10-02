@@ -1,0 +1,5 @@
+{
+  "cpp_namespace_root": "^[a-zA-Z_][a-zA-Z0-9_]*$",
+  "cpp_namespace_project": "^[a-zA-Z_][a-zA-Z0-9_]*$",
+  "project_slug": "^[a-zA-Z_][a-zA-Z0-9-_]*$"
+}

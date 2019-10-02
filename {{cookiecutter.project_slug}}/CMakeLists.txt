@@ -1,10 +1,18 @@
 cmake_minimum_required(VERSION 3.8)
 
-project({{cookiecutter.project_slug|lower}} VERSION 1.0.0 LANGUAGES CXX)
+project({{cookiecutter.project_slug}} VERSION {{cookiecutter.version}} LANGUAGES CXX)
 
-SET(CMAKE_USE_CLANG_TIDY ON)
-SET(CMAKE_VERBOSE_MAKEFILE ON)
-#SET(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(LIB_NAMESPACE {{cookiecutter.cpp_namespace_root}})
+set(LIB_NAME {{cookiecutter.cpp_namespace_project}})
+set(LIB_TARGET_NAME ${PROJECT_NAME})
+
+# LIB_NAME_CAP is used to procude version.h
+string(TOUPPER ${LIB_NAMESPACE}_${LIB_NAME} LIB_NAME_CAP)
+
+
+SET(CMAKE_USE_CLANG_TIDY OFF)
+SET(CMAKE_VERBOSE_MAKEFILE OFF)
+SET(CMAKE_EXPORT_COMPILE_COMMANDS OFF)
 
 # by default use release
 if (NOT CMAKE_BUILD_TYPE)
@@ -35,97 +43,107 @@ get_git_head_revision(GIT_REFSPEC GIT_COMMIT_HASH)
 git_local_changes(GIT_LOCAL_DIRTY)
 
 
-# LIB_NAME_CAP is used to procude version.h
-SET(LIB_NAME_CAP {{cookiecutter.cpp_namespace_root.upper().replace('-', '_')}}_{{cookiecutter.cpp_namespace_project.upper().replace('-', '_')}})
-
 # generate version header
 configure_file(
-    cmake/version.h.in
-    ${CMAKE_CURRENT_BINARY_DIR}/{{cookiecutter.project_slug|lower}}/version.h
-     @ONLY)
+        cmake/version.h.in
+        ${CMAKE_CURRENT_BINARY_DIR}/include/${LIB_TARGET_NAME}/version.h
+        @ONLY)
 
 ##############################################
+
 # Declare dependencies
-find_package(Boost COMPONENTS program_options filesystem REQUIRED)
 
-#Google logging framework
-find_package(glog REQUIRED)
+{% if cookiecutter.use_docopts == 'Y' -%}
+find_package(docopt 0.6.2 REQUIRED)
+{% endif %}
 
-#Google command line arguments parser
-SET(GFLAGS_USE_TARGET_NAMESPACE ON)
-find_package(gflags REQUIRED)
 
 ##############################################
-# Create target and set properties
+# Create executable
 
-
-SET({{cookiecutter.project_slug|lower}}_SOURCES
-        src/{{cookiecutter.project_slug|lower}}.cpp
+add_executable(${LIB_TARGET_NAME}_exe
+        src/main.cpp
         )
 
-add_library({{cookiecutter.project_slug|lower}} SHARED
-        ${{ '{' }}{{cookiecutter.project_slug|lower}}_SOURCES}
+target_link_libraries(${LIB_TARGET_NAME}_exe
+        ${LIB_TARGET_NAME}
+{% if cookiecutter.use_docopts == 'Y' -%}
+        docopt
+{% endif %}
+        )
+
+# Create library
+SET(${LIB_TARGET_NAME}_SOURCES
+        src/${LIB_TARGET_NAME}.cpp
+
+        )
+
+add_library(${LIB_TARGET_NAME} SHARED
+        ${${LIB_TARGET_NAME}_SOURCES}
         )
 
 # Add an alias so that library can be used inside install treea and the build tree with the same name
-add_library({{cookiecutter.cpp_namespace_root|lower}}::{{cookiecutter.cpp_namespace_project|lower}} ALIAS {{cookiecutter.project_slug|lower}})
+add_library(${LIB_NAMESPACE}::${LIB_NAME} ALIAS ${LIB_TARGET_NAME})
 
-target_compile_definitions({{cookiecutter.project_slug|lower}}
+target_compile_definitions(${LIB_TARGET_NAME}
         PUBLIC
         PRIVATE
         )
 
 # Set target includes properties
 # please note also variable LIB_TARGET_INCLUDE_DIRS used later on, concerning PUBLIC/INTERFACE include locations
-target_include_directories({{cookiecutter.project_slug|lower}}
+target_include_directories(${LIB_TARGET_NAME}
         PUBLIC
-        $<INSTALL_INTERFACE:include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
 
         PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        )
+
+target_include_directories(${LIB_TARGET_NAME}
+        SYSTEM PUBLIC
+        $<INSTALL_INTERFACE:include>
+
         )
 
 # set the PERFORMANCE_TIMERS so we can test them
-target_compile_definitions({{cookiecutter.project_slug|lower}}
+target_compile_definitions(${LIB_TARGET_NAME}
         PUBLIC
         )
 
-target_compile_features({{cookiecutter.project_slug|lower}}
+target_compile_features(${LIB_TARGET_NAME}
         PRIVATE
-        cxx_auto_type
+        cxx_std_11
         PUBLIC
         )
 
-target_compile_options({{cookiecutter.project_slug|lower}}
+target_compile_options(${LIB_TARGET_NAME}
         PRIVATE
         -Wall
         )
 
 # public libraries
-SET({{cookiecutter.project_slug|lower}}_PUB_LIBS
-        ${Boost_LIBRARIES}
-        glog::glog
+SET(${LIB_TARGET_NAME}_PUB_LIBS
         )
 
-#public librarues has to be added manually to {{cookiecutter.project_slug}}/cmake/Config.cmake.in so the downstream project will pick it up correctly
-SET({{cookiecutter.project_slug|lower}}_PRIVATE_LIBS
-        glog::glog
+#public librarues has to be added manually to cmake/Config.cmake.in so the downstream project will pick it up correctly
+SET(${LIB_TARGET_NAME}_PRIVATE_LIBS
         )
 
 # Link dependent libraries
 # make sure the public one are declared in cmake/Config.cmake.in as find_dependency
-target_link_libraries({{cookiecutter.project_slug|lower}}
+target_link_libraries(${LIB_TARGET_NAME}
         PUBLIC
-        ${{ '{' }}{{cookiecutter.project_slug|lower}}_PUB_LIBS}
+        ${${LIB_TARGET_NAME}_PUB_LIBS}
         PRIVATE
-        ${{ '{' }}{{cookiecutter.project_slug|lower}}_PRIVATE_LIBS}
+        ${${LIB_TARGET_NAME}_PRIVATE_LIBS}
         )
 
 # declaring public header list
-SET({{cookiecutter.project_slug|lower}}_PUBLIC_HDRS
-        include/{{cookiecutter.project_slug|lower}}/{{cookiecutter.project_slug|lower}}.h
-        ${CMAKE_CURRENT_BINARY_DIR}/{{cookiecutter.project_slug|lower}}/version.h
+SET(${LIB_TARGET_NAME}_PUBLIC_HDRS
+        include/${LIB_TARGET_NAME}/${LIB_TARGET_NAME}.h
+        ${CMAKE_CURRENT_BINARY_DIR}/include/${LIB_TARGET_NAME}/version.h
         )
 
 find_program(CLANG_TIDY_EXE
@@ -138,17 +156,20 @@ find_program(CLANG_TIDY_EXE
         )
 
 if (CMAKE_USE_CLANG_TIDY)
-    if(NOT CLANG_TIDY_EXE)
+    if (NOT CLANG_TIDY_EXE)
         message(ERROR "clang-tidy not found.")
-    else()
+    else ()
         SET(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY_EXE}")
-    endif()
+        set_target_properties(${LIB_TARGET_NAME} PROPERTIES
+                CXX_CLANG_TIDY "${CLANG_TIDY_EXE}"
+                )
+    endif ()
 endif (CMAKE_USE_CLANG_TIDY)
 
 # set properties
-set_target_properties({{cookiecutter.project_slug|lower}} PROPERTIES
+set_target_properties(${LIB_TARGET_NAME} PROPERTIES
         # link target to export name
-        EXPORT_NAME {{cookiecutter.cpp_namespace_project|lower}}
+        EXPORT_NAME ${LIB_NAME}
 
         CMAKE_CXX_STANDARD 11
 
@@ -156,8 +177,7 @@ set_target_properties({{cookiecutter.project_slug|lower}} PROPERTIES
         FRAMEWORK TRUE
 
         # declare public headers
-        PUBLIC_HEADER "${{ '{' }}{{cookiecutter.project_slug|lower}}_PUBLIC_HDRS}"
-        CXX_CLANG_TIDY "${CLANG_TIDY_EXE}"
+        PUBLIC_HEADER "${${LIB_TARGET_NAME}_PUBLIC_HDRS}"
         )
 
 
@@ -166,28 +186,28 @@ set_target_properties({{cookiecutter.project_slug|lower}} PROPERTIES
 
 
 include(GNUInstallDirs)
-SET(INSTALL_CONFIGDIR ${CMAKE_INSTALL_LIBDIR}/cmake/{{cookiecutter.cpp_namespace_project|lower}})
+SET(INSTALL_CONFIGDIR ${CMAKE_INSTALL_LIBDIR}/cmake/${LIB_NAME})
 
 # install libratries and headers
-install(TARGETS {{cookiecutter.project_slug|lower}}
-        EXPORT {{cookiecutter.project_slug|lower}}-targets
+install(TARGETS ${LIB_TARGET_NAME}
+        EXPORT ${LIB_TARGET_NAME}-targets
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/{{cookiecutter.project_slug|lower}}
+        PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${LIB_TARGET_NAME}
         )
 
 
 # install exported the targets to a script
-install(EXPORT {{cookiecutter.project_slug|lower}}-targets
-        FILE {{cookiecutter.cpp_namespace_project|lower}}Targets.cmake
-        NAMESPACE {{cookiecutter.cpp_namespace_root|upper}}::
+install(EXPORT ${LIB_TARGET_NAME}-targets
+        FILE ${LIB_NAME}Targets.cmake
+        NAMESPACE ${LIB_NAMESPACE}::
         DESTINATION ${INSTALL_CONFIGDIR}
         )
 
 #Create a ConfigVersion.cmake file
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
-        ${CMAKE_CURRENT_BINARY_DIR}/{{cookiecutter.cpp_namespace_project|lower}}ConfigVersion.cmake
+        ${CMAKE_CURRENT_BINARY_DIR}/${LIB_NAME}ConfigVersion.cmake
         VERSION ${PROJECT_VERSION}
         COMPATIBILITY AnyNewerVersion
 )
@@ -196,7 +216,7 @@ write_basic_package_version_file(
 SET(LIB_TARGET_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/include;${CMAKE_CURRENT_BINARY_DIR}")
 configure_package_config_file(
         ${CMAKE_CURRENT_LIST_DIR}/cmake/Config.cmake.in
-        ${CMAKE_CURRENT_BINARY_DIR}/{{cookiecutter.cpp_namespace_project|lower}}Config.cmake
+        ${CMAKE_CURRENT_BINARY_DIR}/${LIB_NAME}Config.cmake
         INSTALL_DESTINATION ${INSTALL_CONFIGDIR}
 )
 
@@ -204,15 +224,15 @@ configure_package_config_file(
 SET(LIB_TARGET_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include")
 configure_package_config_file(
         ${CMAKE_CURRENT_LIST_DIR}/cmake/Config.cmake.in
-        ${CMAKE_CURRENT_BINARY_DIR}/install/{{cookiecutter.cpp_namespace_project|lower}}Config.cmake
+        ${CMAKE_CURRENT_BINARY_DIR}/install/${LIB_NAME}Config.cmake
         INSTALL_DESTINATION ${INSTALL_CONFIGDIR}
 )
 
 #Install the config, configversion and custom find modules
 install(
         FILES
-        ${CMAKE_CURRENT_BINARY_DIR}/install/{{cookiecutter.cpp_namespace_project|lower}}Config.cmake
-        ${CMAKE_CURRENT_BINARY_DIR}/{{cookiecutter.cpp_namespace_project|lower}}ConfigVersion.cmake
+        ${CMAKE_CURRENT_BINARY_DIR}/install/${LIB_NAME}Config.cmake
+        ${CMAKE_CURRENT_BINARY_DIR}/${LIB_NAME}ConfigVersion.cmake
         DESTINATION ${INSTALL_CONFIGDIR}
 )
 
@@ -229,13 +249,13 @@ endif ()
 
 #############################################
 # Exporting from the build tree
-export(EXPORT {{cookiecutter.project_slug|lower}}-targets
-        FILE ${CMAKE_CURRENT_BINARY_DIR}/{{cookiecutter.cpp_namespace_project|lower}}Targets.cmake
-        NAMESPACE {{cookiecutter.cpp_namespace_root|upper}}::
+export(EXPORT ${LIB_TARGET_NAME}-targets
+        FILE ${CMAKE_CURRENT_BINARY_DIR}/${LIB_NAME}Targets.cmake
+        NAMESPACE ${LIB_NAMESPACE}::
         )
 
 #Register package in user's package registry
-export(PACKAGE {{cookiecutter.cpp_namespace_project|lower}})
+export(PACKAGE ${LIB_NAME})
 
 # include test project
 enable_testing()
