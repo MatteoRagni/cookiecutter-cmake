@@ -9,7 +9,7 @@ Install `cookiecutter` command line: `pip install cookiecutter`
 
 Usage
 -----
-Generate a new Cookiecutter template layout: `cookiecutter gh:maciejmatuszak/cookiecutter--cpp-modern-cmake-lib`    
+Generate a new Cookiecutter template layout: `cookiecutter gl:maciej.matuszak/cookiecutter-cpp-modern-cmake-lib`    
 
 License
 -------

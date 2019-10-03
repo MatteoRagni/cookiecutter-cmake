@@ -32,9 +32,11 @@ if (NOT CMAKE_USE_CLANG_TIDY)
             )
 endif (NOT CMAKE_USE_CLANG_TIDY)
 
+# local dependencies path
+LIST(INSERT CMAKE_PREFIX_PATH 0 ${CMAKE_CURRENT_SOURCE_DIR}/../${PROJECT_NAME}_dependencies)
+
 # cmake path for local files
 list(INSERT CMAKE_MODULE_PATH 0 ${PROJECT_SOURCE_DIR}/cmake)
-
 include(cmake/clang-cxx-dev-tools.cmake)
 
 # extract version from GIT

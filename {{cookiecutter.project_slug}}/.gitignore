@@ -1,0 +1,4 @@
+build/
+cmake-build-*/
+dependencies/build/*
+!dependencies/build/.gitkeep
