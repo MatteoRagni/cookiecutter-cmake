@@ -9,17 +9,27 @@ set(LIB_TARGET_NAME ${PROJECT_NAME})
 # LIB_NAME_CAP is used to procude version.h
 string(TOUPPER ${LIB_NAMESPACE}_${LIB_NAME} LIB_NAME_CAP)
 
-
+# use clang tidy?
 SET(CMAKE_USE_CLANG_TIDY OFF)
+
+# would you like to see the command executed or just summary
 SET(CMAKE_VERBOSE_MAKEFILE OFF)
+
+# do you want the compile_commands.json generated?
 SET(CMAKE_EXPORT_COMPILE_COMMANDS OFF)
 
+# cmake path for local files
+list(INSERT CMAKE_MODULE_PATH 0 ${PROJECT_SOURCE_DIR}/cmake)
+
 # by default use release
-if (NOT CMAKE_BUILD_TYPE)
-    SET(CMAKE_BUILD_TYPE "Release"
-            CACHE STRING "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel."
-            )
-endif (NOT CMAKE_BUILD_TYPE)
+include(BuildType)
+
+# various platform depended paths
+include(GNUInstallDirs)
+
+# setup how the exe is linked to lib - after install set absolute path
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 # default flags based on build type
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
@@ -35,8 +45,6 @@ endif (NOT CMAKE_USE_CLANG_TIDY)
 # local dependencies path
 LIST(INSERT CMAKE_PREFIX_PATH 0 ${CMAKE_CURRENT_SOURCE_DIR}/../${PROJECT_NAME}_dependencies)
 
-# cmake path for local files
-list(INSERT CMAKE_MODULE_PATH 0 ${PROJECT_SOURCE_DIR}/cmake)
 include(cmake/clang-cxx-dev-tools.cmake)
 
 # extract version from GIT
@@ -77,7 +85,6 @@ target_link_libraries(${LIB_TARGET_NAME}_exe
 # Create library
 SET(${LIB_TARGET_NAME}_SOURCES
         src/${LIB_TARGET_NAME}.cpp
-
         )
 
 add_library(${LIB_TARGET_NAME} SHARED
@@ -186,17 +193,18 @@ set_target_properties(${LIB_TARGET_NAME} PROPERTIES
 ##############################################
 # Installation instructions
 
-
-include(GNUInstallDirs)
 SET(INSTALL_CONFIGDIR ${CMAKE_INSTALL_LIBDIR}/cmake/${LIB_NAME})
 
 # install libratries and headers
-install(TARGETS ${LIB_TARGET_NAME}
+install(TARGETS
+                ${LIB_TARGET_NAME}
+                ${LIB_TARGET_NAME}_exe
         EXPORT ${LIB_TARGET_NAME}-targets
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
         PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${LIB_TARGET_NAME}
-        )
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
 
 
 # install exported the targets to a script
