@@ -3,12 +3,16 @@
 
 #include <string>
 #include "{{cookiecutter.project_slug}}/version.h"
+#include <boost/log/trivial.hpp>
+
 
 namespace {{cookiecutter.cpp_namespace_root}}
 {
 namespace {{cookiecutter.cpp_namespace_project}}
 {
+
 std::string getLibVersion();
+void init_logging(const std::string &logFileName, const std::string &sev_file_str, const std::string &sev_console_str);
 
 } // namespace {{cookiecutter.cpp_namespace_project}}
 } // namespace {{cookiecutter.cpp_namespace_root}}

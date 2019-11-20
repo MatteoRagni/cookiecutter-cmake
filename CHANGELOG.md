@@ -7,4 +7,5 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 #### Added
 
 ## 2019-11-21
- - switched to boost unit testing 
+ - switched to boost unit testing
+ - added boost logging

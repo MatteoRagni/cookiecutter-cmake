@@ -67,6 +67,10 @@ configure_file(
 find_package(docopt 0.6.2 REQUIRED)
 {% endif %}
 
+find_package(Boost COMPONENTS filesystem iostreams log REQUIRED)
+
+find_package(Threads)
+
 
 ##############################################
 # Create executable
@@ -80,6 +84,12 @@ target_link_libraries(${LIB_TARGET_NAME}_exe
 {% if cookiecutter.use_docopts == 'Y' -%}
         docopt
 {% endif %}
+        )
+
+target_compile_definitions(${LIB_TARGET_NAME}_exe
+        PUBLIC
+        BOOST_ALL_DYN_LINK ON
+        PRIVATE
         )
 
 # Create library
@@ -97,6 +107,7 @@ add_library(${LIB_NAMESPACE}::${LIB_NAME} ALIAS ${LIB_TARGET_NAME})
 target_compile_definitions(${LIB_TARGET_NAME}
         PUBLIC
         PRIVATE
+        BOOST_ALL_DYN_LINK ON
         )
 
 # Set target includes properties
@@ -133,7 +144,10 @@ target_compile_options(${LIB_TARGET_NAME}
         )
 
 # public libraries
+# public libraries should also be added to cmake/Config.cmake.in
 SET(${LIB_TARGET_NAME}_PUB_LIBS
+        ${Boost_LIBRARIES}
+        Threads::Threads
         )
 
 #public librarues has to be added manually to cmake/Config.cmake.in so the downstream project will pick it up correctly

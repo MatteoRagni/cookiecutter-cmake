@@ -8,8 +8,8 @@ list(APPEND CMAKE_MODULE_PATH ${@LIB_NAME@_CMAKE_DIR})
 #find_package(Eigen3 REQUIRED)
 #find_package(OpenCV REQUIRED)
 
-find_package(glog REQUIRED)
-find_package(Boost COMPONENTS system filesystem REQUIRED )
+find_package(Boost COMPONENTS filesystem iostreams log REQUIRED)
+find_package(Threads)
 
 list(REMOVE_AT CMAKE_MODULE_PATH -1)
 
