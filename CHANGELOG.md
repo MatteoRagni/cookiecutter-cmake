@@ -5,4 +5,6 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### [Unreleased][unreleased]
 
 #### Added
-- package files
+
+## 2019-11-21
+ - switched to boost unit testing 
